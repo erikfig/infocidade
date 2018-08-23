@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams, LoadingController, ToastController } from 'ionic-angular';
 import { FileTransfer, FileUploadOptions, FileTransferObject } from '@ionic-native/file-transfer';
+import { File } from '@ionic-native/file';
 import { Camera, CameraOptions } from '@ionic-native/camera';
 import { Http , Headers, RequestOptions} from '../../../node_modules/@angular/http';
 
@@ -15,11 +16,12 @@ export class UploadPage {
   imageFileName:any;
   ID_TIPO:any;
 
-  constructor(public navCtrl: NavController, 
+  constructor(public navCtrl: NavController,
     public navParams: NavParams,
     public http: Http,
     private transfer: FileTransfer,
     private camera: Camera,
+    private file: File,
     public loadingCtrl: LoadingController,
     public toastCtrl: ToastController) {
 
@@ -34,15 +36,17 @@ export class UploadPage {
     sourceType: type == 0 ? this.camera.PictureSourceType.CAMERA : this.camera.PictureSourceType.PHOTOLIBRARY,
     mediaType: this.camera.MediaType.PICTURE,
   }
-  
+
     this.camera.getPicture(options).then((imageData) => {
-      let base64Image = 'data:image/jpeg;base64,' + imageData;
-      this.imageURI = imageData;
-      //this.imageURI = base64Image;
+      const fileNameIndex: number = imageData.lastIndexOf('/') + 1;
+      const cacheDirectoryFromFileUri = imageData.substring(0, fileNameIndex);
+      const fileName = imageData.substring(fileNameIndex);
+
+      this.file.readAsDataURL(cacheDirectoryFromFileUri, fileName).then(base64 => {
+        this.imageURI = base64;
+      });
     }, (err) => {
-      console.log("erro no getPicture()");
       console.log(err);
-      this.presentToast(err);
     });
   }
 
@@ -52,7 +56,7 @@ export class UploadPage {
     });
     loader.present();/*
     const fileTransfer: FileTransferObject = this.transfer.create();
-  
+
     let options: FileUploadOptions = {
       fileKey: 'imagem',
       fileName: 'imagem.jpeg',
@@ -61,7 +65,7 @@ export class UploadPage {
       mimeType: "image/jpeg",
       headers: {}
     }
-  
+
     fileTransfer.upload(this.imageURI, 'http://127.0.0.1:8000/api/teste', options)
       .then((data) => {
       console.log(data+" Uploaded Successfully");
@@ -79,7 +83,7 @@ export class UploadPage {
       ID_TIPOIMAGEM: this.ID_TIPO,
       IMAGEM: this.imageURI,
     };
-    
+
     let body = new FormData();
     body.append('ID_TIPOIMAGEM', this.ID_TIPO);
     body.append('IMAGEM', this.imageURI);
@@ -108,7 +112,7 @@ export class UploadPage {
       duration: 3000,
       position: 'bottom'
     });
-  
+
     toast.present();
   }
 }
